@@ -63,4 +63,8 @@ public static class EchoTool
 
     [McpServerTool, Description("Returns the MCP version.")]
     public static string GetVersion() => $"MCP (anonymous) Version: {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version} Server: {(string.IsNullOrEmpty(Environment.MachineName) ? "Unknown" : Environment.MachineName)}";
+
+    [McpServerTool, Description("Add iteme to the shoping cart.")]
+    public static string AddToCart(string item) => $"Item '{item}' added to the shopping cart ({(string.IsNullOrEmpty(Environment.MachineName) ? "Unknown" : Environment.MachineName)}).";
+
 }
