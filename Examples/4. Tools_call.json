@@ -1,0 +1,11 @@
+{
+  "method": "tools/call",
+  "params": {
+    "name": "echo",
+    "arguments": {
+      "message": "User's message"
+    }
+  },
+  "jsonrpc": "2.0",
+  "id": 0
+}

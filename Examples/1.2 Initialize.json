@@ -1,0 +1,13 @@
+{
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {},
+    "clientInfo": {
+      "name": "openai-mcp",
+      "version": "1.0.0"
+    }
+  },
+  "jsonrpc": "2.0",
+  "id": 0
+}
