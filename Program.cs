@@ -9,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // The following line enables Application Insights telemetry collection.
 builder.Services.AddApplicationInsightsTelemetry();
+builder.Services.AddHttpContextAccessor();
 
 // Add Azure stream log service
 builder.Logging.AddAzureWebAppDiagnostics();
@@ -40,7 +41,8 @@ var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
 
 EchoTool.Initialize(
     logger: loggerFactory.CreateLogger("EchoTool"), 
-    telemetry: app.Services.GetRequiredService<TelemetryClient>());
+    telemetry: app.Services.GetRequiredService<TelemetryClient>(),
+    httpContextAccessor: app.Services.GetRequiredService<IHttpContextAccessor>());
 
 // Add request logging middleware
 app.UseMiddleware<RequestLoggingMiddleware>();
