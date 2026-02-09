@@ -6,6 +6,27 @@ using Azure.Core;
 using Azure.Storage.Blobs;
 using System.Threading.Tasks;
 
+// Custom TokenCredential implementation for static token
+public class StaticTokenCredential : TokenCredential
+{
+    private readonly AccessToken _token;
+
+    public StaticTokenCredential(AccessToken token)
+    {
+        _token = token;
+    }
+
+    public override AccessToken GetToken(TokenRequestContext requestContext, CancellationToken cancellationToken)
+    {
+        return _token;
+    }
+
+    public override ValueTask<AccessToken> GetTokenAsync(TokenRequestContext requestContext, CancellationToken cancellationToken)
+    {
+        return new ValueTask<AccessToken>(_token);
+    }
+}
+
 [McpServerToolType]
 public static class EchoTool
 {
@@ -58,23 +79,45 @@ public static class EchoTool
         else
         {
             _logger.LogInformation("ListBlobContainers: No Authorization header present");
+            return "No Authorization header present.";
         }
 
-        // // 1. Wrap your string token
-        // // The 'ExpiresOn' is required; set it to the token's actual expiry or a future offset
-        // var token = new AccessToken(accessToken, DateTimeOffset.UtcNow.AddHours(1));
+        // 1. Wrap your string token
+        // The 'ExpiresOn' is required; set it to the token's actual expiry or a future offset
+        var tokenValue = authHeader.ToString();
+        if (tokenValue.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            tokenValue = tokenValue["Bearer ".Length..].Trim();
+        }
 
-        // // 2. Create a Static Token Credential
-        // var credential = TokenCredential.Create((tokenRequestContext, cancellationToken) => token);
+        var token = new AccessToken(tokenValue, DateTimeOffset.UtcNow.AddHours(1));
 
-        // // 3. Initialize the Client
-        // var serviceUri = new Uri($"https://{accountName}.blob.core.windows.net");
-        // var blobServiceClient = new BlobServiceClient(serviceUri, credential);
+        // 2. Create a Static Token Credential
+        var credential = new StaticTokenCredential(token);
 
-        // // Now you can interact with the storage
-        // var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
-        // Console.WriteLine($"Connected to container: {containerClient.Name}");
+        var accountName = Environment.GetEnvironmentVariable("accountName");
+        if (string.IsNullOrWhiteSpace(accountName))
+        {
+            _logger.LogWarning("ListBlobContainers: Missing environment variable 'accountName'.");
+            return "Missing environment variable 'accountName'.";
+        }
 
-        return $"Containers in Azure Blob Storage Account: {(string.IsNullOrEmpty(Environment.MachineName) ? "Unknown" : Environment.MachineName)} MCP Version: {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version} Date: {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")} UTC";
+        // 3. Initialize the Client
+        var serviceUri = new Uri($"https://{accountName}.blob.core.windows.net");
+        var blobServiceClient = new BlobServiceClient(serviceUri, credential);
+
+        // Now you can interact with the storage
+        var containerClient = blobServiceClient.GetBlobContainerClient("$root");
+        
+        // Contacinate container names into a single string
+        var containerNames = new List<string>();    
+        foreach (var container in blobServiceClient.GetBlobContainers())
+        {
+            containerNames.Add(container.Name);
+        }
+
+        // Return the list of container names as a comma-separated string
+        var result = string.Join(", ", containerNames);   
+        return $"Containers in Azure Blob Storage Account: {result}";
     }
 }
