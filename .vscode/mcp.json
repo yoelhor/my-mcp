@@ -4,8 +4,8 @@
 			"url": "http://localhost:5117/",
 			"type": "http"
 		},
-		"my-mcp-server-remote": {
-			"url": "https://mymcp-a0fwfbakgbcwcpa6.westeurope-01.azurewebsites.net/",
+		"my-mcp-server-remote-v1": {
+			"url": "https://mymcpdemo-cve3buatgxerg9c7.westeurope-01.azurewebsites.net/",
 			"type": "http"
 		}
 	},

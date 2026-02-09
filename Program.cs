@@ -36,6 +36,12 @@ builder.Services.AddMcpServer(options =>
     .WithToolsFromAssembly();
 var app = builder.Build();
 
+var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
+
+EchoTool.Initialize(
+    logger: loggerFactory.CreateLogger("EchoTool"), 
+    telemetry: app.Services.GetRequiredService<TelemetryClient>());
+
 // Add request logging middleware
 app.UseMiddleware<RequestLoggingMiddleware>();
 

@@ -3,15 +3,15 @@ using Microsoft.ApplicationInsights;
 using ModelContextProtocol.Server;
 
 [McpServerToolType]
-public sealed class EchoTool
+public static class EchoTool
 {
-    private static ILogger<RequestLoggingMiddleware> _logger;
+    private static ILogger _logger = null!;
     private static TelemetryClient _telemetry;
 
-    public EchoTool(ILogger<RequestLoggingMiddleware> logger, TelemetryClient telemetry)
+    public static void Initialize(ILogger logger, TelemetryClient telemetry)
     {
-        EchoTool._logger = logger;
-        EchoTool._telemetry = telemetry;
+        _logger = logger;
+        _telemetry = telemetry;
     }
 
     [McpServerTool, Description("Echoes the message back to the client.")]
@@ -31,8 +31,8 @@ public sealed class EchoTool
     public static string ListBlobContainers()
     {
 
-        _logger.LogInformation("No Authorization header present");
+        //_logger.LogInformation("No Authorization header present");
 
-        return $"Listing containers in Azure Blob Storage account ({(string.IsNullOrEmpty(Environment.MachineName) ? "Unknown" : Environment.MachineName)})";
+        return $"Containers in Azure Blob Storage Account: {(string.IsNullOrEmpty(Environment.MachineName) ? "Unknown" : Environment.MachineName)} MCP Version: {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version} Date: {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")} UTC";
     }
 }
