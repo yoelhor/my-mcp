@@ -40,7 +40,7 @@ var app = builder.Build();
 var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
 
 EchoTool.Initialize(
-    logger: loggerFactory.CreateLogger("EchoTool"), 
+    logger: loggerFactory.CreateLogger("EchoTool"),
     telemetry: app.Services.GetRequiredService<TelemetryClient>(),
     httpContextAccessor: app.Services.GetRequiredService<IHttpContextAccessor>());
 
@@ -54,8 +54,10 @@ app.MapGet("/info", (TelemetryClient telemetryClient) =>
 {
     var version = System.Reflection.Assembly.GetExecutingAssembly()
         .GetName().Version?.ToString() ?? "Unknown";
-
-    return new { Name = "Anonymous MCP Server", Version = version };
+        
+    string date = $"Date: {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")} UTC";
+    
+    return new { Name = "Anonymous MCP Server", Version = version, Date = date };
 });
 
 app.Run();
