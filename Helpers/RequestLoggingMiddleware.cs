@@ -18,63 +18,29 @@ public class RequestLoggingMiddleware
     {
         // Log request information
         string page = "", method = "", authorizationHeader = "", requestBody = "";
-        bool isAuthorizationHeaderProvided = false;
-
 
         // Get Authorization header
         if (context.Request.Headers.TryGetValue("Authorization", out var authHeader))
         {
-            _logger.LogInformation("Authorization Header found: {AuthHeader}", authHeader.ToString());
-            isAuthorizationHeaderProvided = true;
-
             authorizationHeader = authHeader.ToString();
-
         }
         else
         {
-            _logger.LogInformation("No Authorization header present");
-
             authorizationHeader = "No Authorization header present";
         }
 
-        // Get the x-custom-thread-id header
-        string sessionId = null;
-        if (context.Request.Headers.TryGetValue("x-custom-thread-id", out var sessionIdHeader))
-        {
-            sessionId = sessionIdHeader.ToString();
-            _logger.LogInformation("x-custom-thread-id Header found: {SessionId}", sessionId);
-        }
-        else
-        {
-            _logger.LogInformation("No x-custom-thread-id header present");
-        }
-
-        // Get the request body
-        context.Request.EnableBuffering(); // Allow reading body multiple times
-
-        if (context.Request.ContentLength > 0)
-        {
-            using var reader = new StreamReader(
-                context.Request.Body,
-                encoding: Encoding.UTF8,
-                detectEncodingFromByteOrderMarks: false,
-                bufferSize: 1024,
-                leaveOpen: true);
-
-            requestBody = await reader.ReadToEndAsync();
-            context.Request.Body.Position = 0; // Reset stream position
-
-            // Track the full request using the logger
-            _logger.LogInformation("Request Body: {RequestBody}", requestBody);
-        }
-
         // Get the page name
-        if (context.Request.Path.HasValue && context.Request.Path.Value != "/")
+        if (context.Request.Method == "POST")
         {
-            page = context.Request.Path;
-        }
-        else if (context.Request.Path.HasValue && context.Request.Path.Value == "/" && context.Request.Method == "POST")
-        {
+
+            // Get the request body as a string
+            context.Request.EnableBuffering();
+            using (var reader = new StreamReader(context.Request.Body, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, leaveOpen: true))
+            {
+                requestBody = await reader.ReadToEndAsync();
+                context.Request.Body.Position = 0;
+            }
+
             // If the page is "/" and the type is POST, then set page to "MCP tool"
             page = "MCP tool";
 
@@ -85,10 +51,6 @@ public class RequestLoggingMiddleware
                 if (bodyJson.RootElement.TryGetProperty("method", out var methodElement))
                 {
                     method = methodElement.GetString() ?? "Unknown method";
-
-                    // Log the MCP tool and the Authorization header using the AuthHeader variable 
-                    _logger.LogInformation($"MCP tool is called. MCP method: {method}, Authorization header: {authorizationHeader}");
-
                 }
             }
             catch (System.Text.Json.JsonException)
@@ -101,29 +63,10 @@ public class RequestLoggingMiddleware
             page = "Unknown page";
         }
 
-        // Track the request using Application Insights
-        // We only track page views for the root path and /info
-        if (context.Request.Path.Value == "/" || context.Request.Path.Value == "/info")
-        {
-            PageViewTelemetry pageView = new PageViewTelemetry(page);
-
-            // The MCP method
-            if (!string.IsNullOrEmpty(method))
-            {
-                pageView.Properties.Add("McpMethod", method);
-            }
-
-            // The agent session ID
-            if (!string.IsNullOrEmpty(sessionId))
-            {
-                pageView.Properties.Add("AgentThreadId", sessionId);
-            }
-
-            // Whether the Authorization header was provided
-            pageView.Properties.Add("BearerTokenPresent", isAuthorizationHeaderProvided.ToString());
-
-            _telemetry.TrackPageView(pageView);
-        }
+        _logger.LogInformation("*** Request Path: {RequestPath}, Method: {RequestMethod}", context.Request.Path, context.Request.Method);
+        _logger.LogInformation("*** Request Body: {RequestBody}", requestBody);
+        _logger.LogInformation("*** Request Authorization Header: {AuthHeader}", authorizationHeader);
+        _logger.LogInformation("*** Request MCP Method: {McpMethod}", method);
 
         await _next(context);
     }

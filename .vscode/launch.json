@@ -9,7 +9,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/bin/Debug/net9.0/my-mcp-demo.dll",
+            "program": "${workspaceFolder}/bin/Debug/net10.0/my-mcp-demo.dll",
             "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
