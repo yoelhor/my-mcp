@@ -45,25 +45,50 @@ public static class EchoTool
 
     }
 
+    private static void Log(string toolName)
+    {
+        string authHeaderValue = "No Authorization header present";
+
+        if (_httpContextAccessor.HttpContext.Request.Headers.TryGetValue("Authorization", out var authHeader))
+        {
+            authHeaderValue = authHeader.ToString();
+        }
+
+        _logger.LogInformation($"*** The MCP tool '{toolName}' was called. Authorization header: {authHeaderValue}");
+    }
+
     [McpServerTool, Description("Echoes the message back to the client.")]
-    public static string Echo(string message) => $"hello {message}";
+    public static string Echo(string message) 
+    { 
+        Log("Echo"); 
+        return $"hello {message}"; 
+    }
 
     [McpServerTool, Description("Returns the length of a message.")]
-    public static string ContentLength(string message) => $"Your message is {message.Length} characters long.";
+    public static string ContentLength(string message) 
+    { 
+        Log("ContentLength"); 
+        return $"Your message is {message.Length} characters long."; 
+    }
 
     [McpServerTool, Description("Returns the MCP version.")]
-    public static string GetVersion() => $"MCP (anonymous) Version: {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version} Server: {(string.IsNullOrEmpty(Environment.MachineName) ? "Unknown" : Environment.MachineName)} Date: {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")} UTC";
+    public static string GetVersion()
+    {
+        Log("GetVersion");
+        return $"MCP (anonymous) Version: {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version} Server: {(string.IsNullOrEmpty(Environment.MachineName) ? "Unknown" : Environment.MachineName)} Date: {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")} UTC";
+    }
 
     [McpServerTool, Description("Add iteme to the shoping cart.")]
-    public static string AddToCart(string item) => $"Item '{item}' added to the shopping cart ({(string.IsNullOrEmpty(Environment.MachineName) ? "Unknown" : Environment.MachineName)}).";
-
+    public static string AddToCart(string item)
+    {
+        Log("AddToCart");
+        return $"Item '{item}' added to the shopping cart ({(string.IsNullOrEmpty(Environment.MachineName) ? "Unknown" : Environment.MachineName)}).";
+    }
 
     [McpServerTool, Description("List counteiners in an Azure Blob Storage account.")]
     public static string ListBlobContainers()
     {
-
-        _logger.LogInformation("ListBlobContainers called...");
-
+        Log("ListBlobContainers");
         var context = _httpContextAccessor.HttpContext;
         if (context == null)
         {
@@ -108,16 +133,16 @@ public static class EchoTool
 
         // Now you can interact with the storage
         var containerClient = blobServiceClient.GetBlobContainerClient("$root");
-        
+
         // Contacinate container names into a single string
-        var containerNames = new List<string>();    
+        var containerNames = new List<string>();
         foreach (var container in blobServiceClient.GetBlobContainers())
         {
             containerNames.Add(container.Name);
         }
 
         // Return the list of container names as a comma-separated string
-        var result = string.Join(", ", containerNames);   
+        var result = string.Join(", ", containerNames);
         return $"Containers in Azure Blob Storage Account: {result}";
     }
 }
