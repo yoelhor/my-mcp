@@ -102,6 +102,9 @@ public class RequestLoggingMiddleware
             if (!string.IsNullOrEmpty(method))
             {
                 pageView.Properties.Add("McpMethod", method);
+
+                // Log the MCP tool and the Authorization header using the AuthHeader variable 
+                _logger.LogInformation($"MCP tool is called. MCP method: {method}, Authorization header: {authHeader.ToString()}");
             }
 
             // The agent session ID
@@ -109,7 +112,7 @@ public class RequestLoggingMiddleware
             {
                 pageView.Properties.Add("AgentThreadId", sessionId);
             }
-            
+
             // Whether the Authorization header was provided
             pageView.Properties.Add("BearerTokenPresent", isAuthorizationHeaderProvided.ToString());
 
