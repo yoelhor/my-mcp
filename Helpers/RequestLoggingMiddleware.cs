@@ -17,7 +17,7 @@ public class RequestLoggingMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         // Log request information
-        string page = "", method = "", requestBody = "";
+        string page = "", method = "", authorizationHeader = "", requestBody = "";
         bool isAuthorizationHeaderProvided = false;
 
 
@@ -26,10 +26,15 @@ public class RequestLoggingMiddleware
         {
             _logger.LogInformation("Authorization Header found: {AuthHeader}", authHeader.ToString());
             isAuthorizationHeaderProvided = true;
+
+            authorizationHeader = authHeader.ToString();
+
         }
         else
         {
             _logger.LogInformation("No Authorization header present");
+
+            authorizationHeader = "No Authorization header present";
         }
 
         // Get the x-custom-thread-id header
@@ -80,6 +85,10 @@ public class RequestLoggingMiddleware
                 if (bodyJson.RootElement.TryGetProperty("method", out var methodElement))
                 {
                     method = methodElement.GetString() ?? "Unknown method";
+
+                    // Log the MCP tool and the Authorization header using the AuthHeader variable 
+                    _logger.LogInformation($"MCP tool is called. MCP method: {method}, Authorization header: {authorizationHeader}");
+
                 }
             }
             catch (System.Text.Json.JsonException)
@@ -102,9 +111,6 @@ public class RequestLoggingMiddleware
             if (!string.IsNullOrEmpty(method))
             {
                 pageView.Properties.Add("McpMethod", method);
-
-                // Log the MCP tool and the Authorization header using the AuthHeader variable 
-                _logger.LogInformation($"MCP tool is called. MCP method: {method}, Authorization header: {authHeader.ToString()}");
             }
 
             // The agent session ID
