@@ -25,7 +25,7 @@ builder.Services.AddMcpServer(options =>
     options.ServerInfo = new()
     {
         Name = "Welcome to my test MCP server. This MCP server is your comprehensive platform designed for efficient travel management. Gain access to specialized tools for seamless interaction with our customer service, including features for booking your next flight and securing exclusive hotel deals.",
-        Title = "Yoel's MCP Server",
+        Title = "Custom MCP Server demo",
         Version = System.Reflection.Assembly.GetExecutingAssembly()
             .GetName().Version?.ToString() ?? "1.0.0"
     };
@@ -44,10 +44,11 @@ EchoTool.Initialize(
     telemetry: app.Services.GetRequiredService<TelemetryClient>(),
     httpContextAccessor: app.Services.GetRequiredService<IHttpContextAccessor>());
 
-// Add request logging middleware
-app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.MapMcp();
+
+// Add request logging middleware
+app.UseMiddleware<RequestLoggingMiddleware>();
 
 // Provide information about the server
 app.MapGet("/info", (TelemetryClient telemetryClient) =>
