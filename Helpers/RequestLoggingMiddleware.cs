@@ -19,6 +19,13 @@ public class RequestLoggingMiddleware
         // Log request information
         string page = "", method = "", authorizationHeader = "", requestBody = "";
 
+        // Log all HTTP request headers
+        foreach (var header in context.Request.Headers)
+        {
+            _logger.LogInformation("*** Request Header: {HeaderName} = {HeaderValue}", header.Key, header.Value.ToString());
+        }
+
+
         // Get Authorization header
         if (context.Request.Headers.TryGetValue("Authorization", out var authHeader))
         {
