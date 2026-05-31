@@ -20,7 +20,7 @@ if (string.IsNullOrEmpty(McpUrl))
 }
 else
 {
-    McpUrl = $"https://{McpUrl}";
+    McpUrl = $"https://{McpUrl}/";
 }
 
 
