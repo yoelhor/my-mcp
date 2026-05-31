@@ -1,11 +1,54 @@
 // Program.cs
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Logging.AzureAppServices;
+using Microsoft.IdentityModel.Tokens;
+using ModelContextProtocol.AspNetCore.Authentication;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
 
 var builder = WebApplication.CreateBuilder(args);
+var scopesSupported = builder.Configuration.GetSection("Mcp:Scopes").Get<string[]>() ?? ["mcp:tools"];
+var McpUrl = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME");
+
+// If the McpUrl is not set, default to localhost with the current port
+if (string.IsNullOrEmpty(McpUrl))
+{
+    var port = builder.Configuration["PORT"] ?? "5117";
+    McpUrl = $"http://localhost:{port}";
+}
+
+
+// Authentication configuration based on https://github.com/modelcontextprotocol/csharp-sdk/blob/main/samples/ProtectedMcpServer/Program.cs
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultChallengeScheme = McpAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    // Configure to validate tokens from our in-memory OAuth server
+    options.Authority = builder.Configuration["Mcp:Authority"];
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidAudience = builder.Configuration["Mcp:Audience"], // Validate that the audience matches the resource metadata as suggested in RFC 8707
+        ValidIssuer = builder.Configuration["Mcp:Authority"]
+    };
+
+})
+.AddMcp(options =>
+{
+    options.ResourceMetadata = new()
+    {
+        AuthorizationServers = { builder.Configuration["Mcp:Authority"] ?? string.Empty },
+        Resource = McpUrl,
+        ScopesSupported = scopesSupported,
+    };
+});
+
+builder.Services.AddAuthorization();
+
 
 // The following line enables Application Insights telemetry collection.
 builder.Services.AddApplicationInsightsTelemetry();
