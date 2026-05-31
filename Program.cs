@@ -18,6 +18,10 @@ if (string.IsNullOrEmpty(McpUrl))
     var port = builder.Configuration["PORT"] ?? "5117";
     McpUrl = $"http://localhost:{port}";
 }
+else
+{
+    McpUrl = $"https://{McpUrl}";
+}
 
 
 // Authentication configuration based on https://github.com/modelcontextprotocol/csharp-sdk/blob/main/samples/ProtectedMcpServer/Program.cs
