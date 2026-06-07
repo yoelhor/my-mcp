@@ -16,3 +16,7 @@ This demo is build using the [ModelContextProtocol.AspNetCore](https://www.nuget
 
 The easiest current method to add the Microsoft Copilot (MCP) service to an agent is by editing the Azure AI agent directly within the [designer view](https://learn.microsoft.com/en-us/azure/ai-foundry/how-to/develop/vs-code-agents?context=%2Fazure%2Fai-services%2Fagents%2Fcontext%2Fcontext&tabs=windows-powershell&pivots=python) of the VS Code extension. This approach eliminates the need to run any code.
 
+## App settings
+
+- **BlobStorageAccount** - your Azure Blob Storage account.
+

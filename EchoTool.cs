@@ -85,7 +85,7 @@ public static class EchoTool
         return $"Item '{item}' added to the shopping cart ({(string.IsNullOrEmpty(Environment.MachineName) ? "Unknown" : Environment.MachineName)}).";
     }
 
-    [McpServerTool, Description("List counteiners in an Azure Blob Storage account.")]
+    [McpServerTool, Description("List containers in an Azure Blob Storage account.")]
     public static string ListBlobContainers()
     {
         Log("ListBlobContainers");
@@ -120,29 +120,34 @@ public static class EchoTool
         // 2. Create a Static Token Credential
         var credential = new StaticTokenCredential(token);
 
-        var accountName = Environment.GetEnvironmentVariable("accountName");
+        var accountName = Environment.GetEnvironmentVariable("BlobStorageAccount");
         if (string.IsNullOrWhiteSpace(accountName))
         {
-            _logger.LogWarning("ListBlobContainers: Missing environment variable 'accountName'.");
-            return "Missing environment variable 'accountName'.";
+            _logger.LogWarning("ListBlobContainers: Missing environment variable 'BlobStorageAccount'.");
+            return "Missing environment variable 'BlobStorageAccount'.";
         }
 
-        // 3. Initialize the Client
-        var serviceUri = new Uri($"https://{accountName}.blob.core.windows.net");
-        var blobServiceClient = new BlobServiceClient(serviceUri, credential);
-
-        // Now you can interact with the storage
-        var containerClient = blobServiceClient.GetBlobContainerClient("$root");
-
-        // Contacinate container names into a single string
-        var containerNames = new List<string>();
-        foreach (var container in blobServiceClient.GetBlobContainers())
+        try
         {
-            containerNames.Add(container.Name);
-        }
+            // 3. Initialize the client
+            var serviceUri = new Uri($"https://{accountName}.blob.core.windows.net");
+            var blobServiceClient = new BlobServiceClient(serviceUri, credential);
 
-        // Return the list of container names as a comma-separated string
-        var result = string.Join(", ", containerNames);
-        return $"Containers in Azure Blob Storage Account: {result}";
+            // Concatenate container names into a single string
+            var containerNames = new List<string>();
+            foreach (var container in blobServiceClient.GetBlobContainers())
+            {
+                containerNames.Add(container.Name);
+            }
+
+            // Return the list of container names as a comma-separated string
+            var result = string.Join(", ", containerNames);
+            return $"Containers in Azure Blob Storage Account: {result}";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "ListBlobContainers: Error while listing blob containers.");
+            return ex.Message;
+        }
     }
 }
