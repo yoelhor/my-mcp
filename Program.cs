@@ -9,7 +9,21 @@ using ModelContextProtocol.Server;
 using System.ComponentModel;
 
 var builder = WebApplication.CreateBuilder(args);
-var scopesSupported = builder.Configuration.GetSection("Mcp:Scopes").Get<string[]>() ?? ["mcp:tools"];
+
+// Mcp:Scopes is an array of objects, so flatten one level to get scope values.
+var scopesSupported = builder.Configuration
+    .GetSection("Mcp:Scopes")
+    .GetChildren()
+    .SelectMany(section => section.GetChildren())
+    .Select(section => section.Value)
+    .Where(value => !string.IsNullOrWhiteSpace(value))
+    .Cast<string>()
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToList();
+
+// Get write scope from flattened scopes list (fallback to default if not configured).
+var writeScope = builder.Configuration.GetSection("Mcp:Scopes:WriteScope")?.Value ?? "mymcp.write";
+
 var McpUrl = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME");
 
 // If the McpUrl is not set, default to localhost with the current port
@@ -89,7 +103,7 @@ builder.Services.AddAuthorization(options =>
                     claim.Type.EndsWith("/scopes", StringComparison.OrdinalIgnoreCase))
                 .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
-            return tokenScopes.Contains("mymcp.write", StringComparer.OrdinalIgnoreCase);
+            return tokenScopes.Contains(writeScope, StringComparer.OrdinalIgnoreCase);
         });
     });
 });

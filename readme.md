@@ -23,7 +23,8 @@ Add the following app settings with their corresponding values. For Azure App Se
 * **BlobStorageAccount** — your Azure Blob Storage account.
 * **Mcp:Authority** — your Microsoft Entra ID tenant, in the form https://login.microsoftonline.com/{tenant-id}/v2.0.
 * **Mcp:Audience** — the audience of the access token. This must match the app ID in your Entra ID tenant.
-* **Mcp:Scopes** — a collection of valid scopes.
+* **Mcp:Scopes:ReadScope** — the name of the read only scope, like `mymcp.Read`.
+* **Mcp:Scopes:WriteScope** — the name of the read and write scope, like `mymcp.ReadWrite`.
 
 ## Protected resource metadata
 
