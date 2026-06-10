@@ -5,6 +5,7 @@ using ModelContextProtocol.Server;
 using Azure.Core;
 using Azure.Storage.Blobs;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 // Custom TokenCredential implementation for static token
 public class StaticTokenCredential : TokenCredential
@@ -28,7 +29,7 @@ public class StaticTokenCredential : TokenCredential
 }
 
 [McpServerToolType]
-public static class EchoTool
+public static class McpTools
 {
     private static ILogger _logger = null!;
     private static TelemetryClient _telemetry;
@@ -58,14 +59,16 @@ public static class EchoTool
     }
 
     [McpServerTool, Description("Echoes the message back to the client.")]
-    public static string Echo(string message) 
+    public static string Echo(
+        [Description("The message to echo back.")] string message) 
     { 
         Log("Echo"); 
         return $"hello {message}"; 
     }
 
     [McpServerTool, Description("Returns the length of a message.")]
-    public static string ContentLength(string message) 
+    public static string ContentLength(
+        [Description("The message to calculate the length of.")] string message) 
     { 
         Log("ContentLength"); 
         return $"Your message is {message.Length} characters long."; 
@@ -78,8 +81,10 @@ public static class EchoTool
         return $"MCP (anonymous) Version: {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version} Server: {(string.IsNullOrEmpty(Environment.MachineName) ? "Unknown" : Environment.MachineName)} Date: {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")} UTC";
     }
 
-    [McpServerTool, Description("Add iteme to the shoping cart.")]
-    public static string AddToCart(string item)
+    [McpServerTool, Description("Add item to the shopping cart.")]
+    [Authorize(Policy = "RequireWriteScope")]
+    public static string AddToCart(
+        [Description("The item name to add to the shopping cart.")] string item)
     {
         Log("AddToCart");
         return $"Item '{item}' added to the shopping cart ({(string.IsNullOrEmpty(Environment.MachineName) ? "Unknown" : Environment.MachineName)}).";

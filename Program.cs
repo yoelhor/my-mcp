@@ -40,6 +40,27 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["Mcp:Authority"]
     };
 
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = context =>
+        {
+            // var name = context.Principal?.Identity?.Name ?? "unknown";
+            // var email = context.Principal?.FindFirstValue("preferred_username") ?? "unknown";
+            // Console.WriteLine($"Token validated for: {name} ({email})");
+            return Task.CompletedTask;
+        },
+        OnAuthenticationFailed = context =>
+        {
+            Console.WriteLine($"Authentication failed: {context.Exception.Message}");
+            return Task.CompletedTask;
+        },
+        OnChallenge = context =>
+        {
+            Console.WriteLine($"Challenging client to authenticate with Entra ID");
+            return Task.CompletedTask;
+        }
+    };
+
 })
 .AddMcp(options =>
 {
@@ -51,7 +72,27 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireWriteScope", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireAssertion(context =>
+        {
+            // Entra ID issues scopes as a space-delimited string in "scp".
+            // Depending on claim mapping, it may appear under a schema URI.
+            var tokenScopes = context.User.Claims
+                .Where(claim =>
+                    string.Equals(claim.Type, "scp", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(claim.Type, "scope", StringComparison.OrdinalIgnoreCase) ||
+                    claim.Type.EndsWith("/scope", StringComparison.OrdinalIgnoreCase) ||
+                    claim.Type.EndsWith("/scopes", StringComparison.OrdinalIgnoreCase))
+                .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+
+            return tokenScopes.Contains("mymcp.write", StringComparer.OrdinalIgnoreCase);
+        });
+    });
+});
 
 
 // The following line enables Application Insights telemetry collection.
@@ -86,26 +127,49 @@ var app = builder.Build();
 
 var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
 
-EchoTool.Initialize(
-    logger: loggerFactory.CreateLogger("EchoTool"),
+McpTools.Initialize(
+    logger: loggerFactory.CreateLogger("McpTools"),
     telemetry: app.Services.GetRequiredService<TelemetryClient>(),
     httpContextAccessor: app.Services.GetRequiredService<IHttpContextAccessor>());
 
 
-app.MapMcp();
+app.MapMcp().RequireAuthorization();
 
 // Add request logging middleware
 app.UseMiddleware<RequestLoggingMiddleware>();
 
-// Provide information about the server
-app.MapGet("/info", (TelemetryClient telemetryClient) =>
+// Demostrate public endpoint that returns server information, without authentication and authorization
+app.MapGet("/Info", (TelemetryClient telemetryClient) =>
 {
     var version = System.Reflection.Assembly.GetExecutingAssembly()
         .GetName().Version?.ToString() ?? "Unknown";
-        
+
     string date = $"Date: {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")} UTC";
-    
+
     return new { Name = "Anonymous MCP Server", Version = version, Date = date };
 });
+
+// Demostrate app only access endpoint that returns server information, protected by authentication and authorization
+app.MapGet("/App", (TelemetryClient telemetryClient) =>
+{
+    var version = System.Reflection.Assembly.GetExecutingAssembly()
+        .GetName().Version?.ToString() ?? "Unknown";
+
+    string date = $"Date: {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")} UTC";
+
+    return new { Name = "MCP Server app only access", Version = version, Date = date };
+}).RequireAuthorization();
+
+// Demostrate obo access endpoint that returns server information, protected by authentication and authorization
+app.MapGet("/obo", (TelemetryClient telemetryClient) =>
+{
+    var version = System.Reflection.Assembly.GetExecutingAssembly()
+        .GetName().Version?.ToString() ?? "Unknown";
+
+    string date = $"Date: {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")} UTC";
+
+    return new { Name = "MCP Server OBO access", Version = version, Date = date };
+}).RequireAuthorization("RequireWriteScope");
+
 
 app.Run();

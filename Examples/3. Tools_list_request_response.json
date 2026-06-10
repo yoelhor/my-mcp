@@ -1,0 +1,69 @@
+{
+  "result": {
+    "tools": [
+      {
+        "name": "echo",
+        "description": "Echoes the message back to the client.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "message"
+          ]
+        }
+      },
+      {
+        "name": "add_to_cart",
+        "description": "Add item to the shopping cart.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "item": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "item"
+          ]
+        }
+      },
+      {
+        "name": "list_blob_containers",
+        "description": "List containers in an Azure Blob Storage account.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "get_version",
+        "description": "Returns the MCP version.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "content_length",
+        "description": "Returns the length of a message.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "message": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "message"
+          ]
+        }
+      }
+    ]
+  },
+  "id": 1,
+  "jsonrpc": "2.0"
+}
