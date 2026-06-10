@@ -18,6 +18,22 @@
         }
       },
       {
+        "name": "add_to_cart",
+        "description": "Add item to the shopping cart.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "item": {
+              "description": "The item name to add to the shopping cart.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "item"
+          ]
+        }
+      },
+      {
         "name": "list_blob_containers",
         "description": "List containers in an Azure Blob Storage account.",
         "inputSchema": {

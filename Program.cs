@@ -48,8 +48,14 @@ builder.Services.AddAuthentication(options =>
     options.Authority = builder.Configuration["Mcp:Authority"];
     options.TokenValidationParameters = new TokenValidationParameters
     {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
         ValidAudience = builder.Configuration["Mcp:Audience"], // Validate that the audience matches the resource metadata as suggested in RFC 8707
-        ValidIssuer = builder.Configuration["Mcp:Authority"]
+        ValidIssuer = builder.Configuration["Mcp:Authority"],
+        NameClaimType = "name",
+        RoleClaimType = "roles"
     };
 
     options.Events = new JwtBearerEvents
