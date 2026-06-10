@@ -60,25 +60,40 @@ public static class McpTools
 
     [McpServerTool, Description("Echoes the message back to the client.")]
     public static string Echo(
-        [Description("The message to echo back.")] string message) 
-    { 
-        Log("Echo"); 
-        return $"hello {message}"; 
+        [Description("The message to echo back.")] string message)
+    {
+        Log("Echo");
+        return $"hello {message}";
     }
 
     [McpServerTool, Description("Returns the length of a message.")]
     public static string ContentLength(
-        [Description("The message to calculate the length of.")] string message) 
-    { 
-        Log("ContentLength"); 
-        return $"Your message is {message.Length} characters long."; 
+        [Description("The message to calculate the length of.")] string message)
+    {
+        Log("ContentLength");
+        return $"Your message is {message.Length} characters long.";
     }
 
     [McpServerTool, Description("Returns the MCP version.")]
     public static string GetVersion()
     {
         Log("GetVersion");
-        return $"MCP (anonymous) Version: {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version} Server: {(string.IsNullOrEmpty(Environment.MachineName) ? "Unknown" : Environment.MachineName)} Date: {DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")} UTC";
+
+        // Check if user is authenticated and log the user's identity
+        var user = _httpContextAccessor.HttpContext?.User;
+        string username = "Unknown";
+        if (user?.Identity?.IsAuthenticated == true)
+        {
+            username = user.Identity.Name ?? "Unknown";
+        }
+
+        return $"""
+            My MCP:
+            Version: {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}
+            Server: {(string.IsNullOrEmpty(Environment.MachineName) ? "Unknown" : Environment.MachineName)}
+            Date: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC
+            User: {username}
+            """;
     }
 
     [McpServerTool, Description("Add item to the shopping cart.")]
