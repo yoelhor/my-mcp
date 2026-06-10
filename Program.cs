@@ -4,6 +4,7 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Logging.AzureAppServices;
 using Microsoft.IdentityModel.Tokens;
+using ModelContextProtocol.AspNetCore;
 using ModelContextProtocol.AspNetCore.Authentication;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
@@ -138,6 +139,9 @@ builder.Services.AddMcpServer(options =>
 })
     // Use HTTP transport
     .WithHttpTransport()
+
+    // Required when tools have authorization metadata (for example [Authorize]).
+    .AddAuthorizationFilters()
 
     // Register tools from the current assembly using the McpServerTool attribute
     .WithToolsFromAssembly();
