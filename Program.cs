@@ -152,7 +152,9 @@ var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
 McpTools.Initialize(
     logger: loggerFactory.CreateLogger("McpTools"),
     telemetry: app.Services.GetRequiredService<TelemetryClient>(),
-    httpContextAccessor: app.Services.GetRequiredService<IHttpContextAccessor>());
+    httpContextAccessor: app.Services.GetRequiredService<IHttpContextAccessor>(),
+    writeScope: builder.Configuration.GetSection("Mcp:Scopes:WriteScope")?.Value ?? "mymcp.write"
+);
 
 
 app.MapMcp().RequireAuthorization();

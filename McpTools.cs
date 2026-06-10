@@ -34,16 +34,19 @@ public static class McpTools
     private static ILogger _logger = null!;
     private static TelemetryClient _telemetry;
     private static IHttpContextAccessor _httpContextAccessor = null!;
+    private static string _writeScope = "mymcp.write";
+    private static string _username => _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "unknown";
 
     public static void Initialize(
         ILogger logger,
         TelemetryClient telemetry,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        string writeScope)
     {
         _logger = logger;
         _telemetry = telemetry;
         _httpContextAccessor = httpContextAccessor;
-
+        _writeScope = writeScope;
     }
 
     private static void Log(string toolName)
@@ -79,30 +82,34 @@ public static class McpTools
     {
         Log("GetVersion");
 
-        // Check if user is authenticated and log the user's identity
-        var user = _httpContextAccessor.HttpContext?.User;
-        string username = "Unknown";
-        if (user?.Identity?.IsAuthenticated == true)
-        {
-            username = user.Identity.Name ?? "Unknown";
-        }
-
         return $"""
             My MCP:
             Version: {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}
             Server: {(string.IsNullOrEmpty(Environment.MachineName) ? "Unknown" : Environment.MachineName)}
             Date: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC
-            User: {username}
+            User: {_username}
             """;
     }
 
     [McpServerTool, Description("Add item to the shopping cart.")]
-    [Authorize(Policy = "RequireWriteScope")]
+    // [Authorize(Policy = "RequireWriteScope")]
     public static string AddToCart(
         [Description("The item name to add to the shopping cart.")] string item)
     {
         Log("AddToCart");
-        return $"Item '{item}' added to the shopping cart ({(string.IsNullOrEmpty(Environment.MachineName) ? "Unknown" : Environment.MachineName)}).";
+
+        // Check for required scope in the token claims and return an appropriate message
+        string message = HasWriteScope()
+            ? $"Item '{item}' has been added to the shopping cart"
+            : $"User does NOT have required scope '{_writeScope}'. Authorization will fail.";
+
+        // Return the message along with additional context information
+        return $"""
+        {message}
+        Item '{item}' has been added to the shopping cart.
+        Date: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC
+        User: {_username}
+        """;
     }
 
     [McpServerTool, Description("List containers in an Azure Blob Storage account.")]
@@ -169,5 +176,20 @@ public static class McpTools
             _logger.LogError(ex, "ListBlobContainers: Error while listing blob containers.");
             return ex.Message;
         }
+    }
+
+    private static bool HasWriteScope()
+    {
+        // Entra ID issues scopes as a space-delimited string in "scp".
+        // Depending on claim mapping, it may appear under a schema URI.
+        var tokenScopes = _httpContextAccessor.HttpContext?.User?.Claims
+            .Where(claim =>
+                string.Equals(claim.Type, "scp", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(claim.Type, "scope", StringComparison.OrdinalIgnoreCase) ||
+                claim.Type.EndsWith("/scope", StringComparison.OrdinalIgnoreCase) ||
+                claim.Type.EndsWith("/scopes", StringComparison.OrdinalIgnoreCase))
+            .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+
+        return tokenScopes?.Contains(_writeScope, StringComparer.OrdinalIgnoreCase) == true;
     }
 }
