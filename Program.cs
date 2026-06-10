@@ -10,14 +10,11 @@ using System.ComponentModel;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Mcp:Scopes is an array of objects, so flatten one level to get scope values.
-var scopesSupported = builder.Configuration
-    .GetSection("Mcp:Scopes")
+// Get the list of scopes from configuration at Mcp:Scopes 
+var scopesSupported = builder.Configuration.GetSection("Mcp:Scopes")
     .GetChildren()
-    .SelectMany(section => section.GetChildren())
     .Select(section => section.Value)
     .Where(value => !string.IsNullOrWhiteSpace(value))
-    .Cast<string>()
     .Distinct(StringComparer.OrdinalIgnoreCase)
     .ToList();
 
