@@ -100,7 +100,14 @@ builder.Services.AddAuthorization(options =>
                     claim.Type.EndsWith("/scopes", StringComparison.OrdinalIgnoreCase))
                 .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
-            return tokenScopes.Contains(writeScope, StringComparer.OrdinalIgnoreCase);
+            bool hasWriteScope = tokenScopes.Contains(writeScope, StringComparer.OrdinalIgnoreCase);
+
+            if (!hasWriteScope)
+            {
+                Console.WriteLine($"Authorization failed. Required scope '{writeScope}' not found in token.");
+            }
+
+            return hasWriteScope;
         });
     });
 });
