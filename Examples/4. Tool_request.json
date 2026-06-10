@@ -1,0 +1,9 @@
+{
+  "method": "tools/call",
+  "params": {
+    "name": "get_version",
+    "arguments": {}
+  },
+  "jsonrpc": "2.0",
+  "id": 2
+}

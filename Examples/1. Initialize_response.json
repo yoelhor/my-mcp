@@ -1,0 +1,18 @@
+{
+  "result": {
+    "protocolVersion": "2025-11-25",
+    "capabilities": {
+      "logging": {},
+      "tools": {
+        "listChanged": true
+      }
+    },
+    "serverInfo": {
+      "name": "Welcome to my test MCP server. This MCP server is your comprehensive platform designed for efficient travel management. Gain access to specialized tools for seamless interaction with our customer service, including features for booking your next flight and securing exclusive hotel deals.",
+      "title": "Custom MCP Server demo",
+      "version": "1.0.1.14"
+    }
+  },
+  "id": 0,
+  "jsonrpc": "2.0"
+}

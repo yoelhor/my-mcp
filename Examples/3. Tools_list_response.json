@@ -8,26 +8,12 @@
           "type": "object",
           "properties": {
             "message": {
+              "description": "The message to echo back.",
               "type": "string"
             }
           },
           "required": [
             "message"
-          ]
-        }
-      },
-      {
-        "name": "add_to_cart",
-        "description": "Add item to the shopping cart.",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "item": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "item"
           ]
         }
       },
@@ -54,6 +40,7 @@
           "type": "object",
           "properties": {
             "message": {
+              "description": "The message to calculate the length of.",
               "type": "string"
             }
           },

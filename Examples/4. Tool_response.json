@@ -1,0 +1,12 @@
+{
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "MCP (authenticated) Version: 1.0.1.14 Server: webwk000004 Date: 2026-06-10 13:28:20 UTC"
+      }
+    ]
+  },
+  "id": 2,
+  "jsonrpc": "2.0"
+}
