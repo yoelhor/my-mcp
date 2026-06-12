@@ -6,6 +6,7 @@ using Azure.Core;
 using Azure.Storage.Blobs;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using my_mcp_demo.Auth;
 
 // Custom TokenCredential implementation for static token
 public class StaticTokenCredential : TokenCredential
@@ -31,22 +32,27 @@ public class StaticTokenCredential : TokenCredential
 [McpServerToolType]
 public static class McpTools
 {
+    private static IConfiguration _configuration = null!;
     private static ILogger _logger = null!;
     private static TelemetryClient _telemetry;
     private static IHttpContextAccessor _httpContextAccessor = null!;
-    private static string _writeScope = "mymcp.write";
+    private static IOnBehalfOfTokenService _oboTokenService = null!;
+    private static string _writeScope = string.Empty;
     private static string _username => _httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "unknown";
 
     public static void Initialize(
+        IConfiguration configuration,
         ILogger logger,
         TelemetryClient telemetry,
         IHttpContextAccessor httpContextAccessor,
-        string writeScope)
+        IOnBehalfOfTokenService oboTokenService)
     {
+        _configuration = configuration;
         _logger = logger;
         _telemetry = telemetry;
         _httpContextAccessor = httpContextAccessor;
-        _writeScope = writeScope;
+        _oboTokenService = oboTokenService;
+        _writeScope = configuration.GetSection("Mcp:Scopes:WriteScope")?.Value ?? "mymcp.write";
     }
 
     private static void Log(string toolName)
@@ -113,7 +119,7 @@ public static class McpTools
     }
 
     [McpServerTool, Description("List containers in an Azure Blob Storage account.")]
-    public static string ListBlobContainers()
+    public static async Task<string> ListBlobContainers()
     {
         Log("ListBlobContainers");
         var context = _httpContextAccessor.HttpContext;
@@ -134,29 +140,25 @@ public static class McpTools
             return "No Authorization header present.";
         }
 
-        // 1. Wrap your string token
-        // The 'ExpiresOn' is required; set it to the token's actual expiry or a future offset
-        var tokenValue = authHeader.ToString();
-        if (tokenValue.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        var inboundToken = authHeader.ToString();
+        if (inboundToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
-            tokenValue = tokenValue["Bearer ".Length..].Trim();
+            inboundToken = inboundToken["Bearer ".Length..].Trim();
         }
 
-        var token = new AccessToken(tokenValue, DateTimeOffset.UtcNow.AddHours(1));
-
-        // 2. Create a Static Token Credential
-        var credential = new StaticTokenCredential(token);
-
-        var accountName = Environment.GetEnvironmentVariable("BlobStorageAccount");
+        var accountName = _configuration["Mcp:DownstreamApis:AzureStorageAccount:AccountName"];
         if (string.IsNullOrWhiteSpace(accountName))
         {
-            _logger.LogWarning("ListBlobContainers: Missing environment variable 'BlobStorageAccount'.");
-            return "Missing environment variable 'BlobStorageAccount'.";
+            _logger.LogWarning("Missing configuration for Azure Storage account name. Check Mcp:DownstreamApis:AzureStorageAccount:AccountName.");
+            return "Missing configuration for Azure Storage account name.";
         }
 
         try
         {
-            // 3. Initialize the client
+            // Exchange incoming token (aud = this API) for downstream token (aud = storage).
+            var (accessToken, expiresOn) = await _oboTokenService.GetAccessTokenForUserAsync(inboundToken);
+            var credential = new StaticTokenCredential(new AccessToken(accessToken, expiresOn));
+
             var serviceUri = new Uri($"https://{accountName}.blob.core.windows.net");
             var blobServiceClient = new BlobServiceClient(serviceUri, credential);
 

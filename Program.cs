@@ -4,6 +4,7 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Logging.AzureAppServices;
 using Microsoft.IdentityModel.Tokens;
+using my_mcp_demo.Auth;
 using ModelContextProtocol.AspNetCore;
 using ModelContextProtocol.AspNetCore.Authentication;
 using ModelContextProtocol.Server;
@@ -123,6 +124,7 @@ builder.Services.AddAuthorization(options =>
 // The following line enables Application Insights telemetry collection.
 builder.Services.AddApplicationInsightsTelemetry();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<IOnBehalfOfTokenService, OnBehalfOfTokenService>();
 
 // Add Azure stream log service
 builder.Logging.AddAzureWebAppDiagnostics();
@@ -156,10 +158,11 @@ var app = builder.Build();
 var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
 
 McpTools.Initialize(
+    configuration: app.Configuration,
     logger: loggerFactory.CreateLogger("McpTools"),
     telemetry: app.Services.GetRequiredService<TelemetryClient>(),
     httpContextAccessor: app.Services.GetRequiredService<IHttpContextAccessor>(),
-    writeScope: builder.Configuration.GetSection("Mcp:Scopes:WriteScope")?.Value ?? "mymcp.write"
+    oboTokenService: app.Services.GetRequiredService<IOnBehalfOfTokenService>()
 );
 
 
