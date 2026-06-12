@@ -11,7 +11,7 @@ public interface IOnBehalfOfTokenService
 public sealed class OnBehalfOfTokenService : IOnBehalfOfTokenService
 {
     private readonly IConfidentialClientApplication _app;
-    private readonly string[] _scopes;
+    private readonly string[] _scopes = {"https://storage.azure.com/user_impersonation"};
 
     public OnBehalfOfTokenService(IConfiguration configuration)
     {
@@ -32,15 +32,6 @@ public sealed class OnBehalfOfTokenService : IOnBehalfOfTokenService
             .WithAuthority(authority)
             .WithClientSecret(clientSecret)
             .Build();
-
-        // Read the scopes for the downstream API from configuration
-        _scopes = configuration
-            .GetSection("Mcp:DownstreamApis:AzureStorageAccount:Scopes")
-            .GetChildren()
-            .Select(x => x.Value)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray()!;
 
         // Validate that at least one scope is configured for the downstream API
         if (_scopes.Length == 0)

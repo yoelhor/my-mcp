@@ -20,11 +20,17 @@ The easiest current method to add the Microsoft Copilot (MCP) service to an agen
 
 Add the following app settings with their corresponding values. For Azure App Service, replace the `:` in each key with `__` (for example, use `Mcp__Authority` instead of `Mcp:Authority`).
 
-* **BlobStorageAccount** — your Azure Blob Storage account.
 * **Mcp:Authority** — your Microsoft Entra ID tenant, in the form https://login.microsoftonline.com/{tenant-id}/v2.0.
 * **Mcp:Audience** — the audience of the access token. This must match the app ID in your Entra ID tenant.
 * **Mcp:Scopes:ReadScope** — the name of the read only scope, like `mymcp.Read`.
 * **Mcp:Scopes:WriteScope** — the name of the read and write scope, like `mymcp.ReadWrite`.
+
+
+The following values are required for the Azure Storage account demo.
+
+* **Mcp:ClientId** — the app client ID in your Entra ID tenant. 
+* **Mcp:ClientSecret** — the client secret in your Entra ID tenant. 
+* **Mcp:DownstreamApis:AzureStorageAccount:AccountName** your Azure Blob Storage account.
 
 ## Protected resource metadata
 
