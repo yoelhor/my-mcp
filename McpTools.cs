@@ -7,6 +7,7 @@ using Azure.Storage.Blobs;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using my_mcp_demo.Auth;
+using System.Text.Json;
 
 // Custom TokenCredential implementation for static token
 public class StaticTokenCredential : TokenCredential
@@ -176,6 +177,108 @@ public static class McpTools
         catch (Exception ex)
         {
             _logger.LogError(ex, "ListBlobContainers: Error while listing blob containers.");
+            return ex.Message;
+        }
+    }
+
+    [McpServerTool, Description("Get finance report of Contoso company.")]
+    public static async Task<string> GetFinanceReport()
+    {
+        Log("GetFinanceReport");
+
+        // Obtain an access token from the the sidecar API (this API) to call the downstream Azure Storage API.
+        var context = _httpContextAccessor.HttpContext;
+        if (context == null)
+        {
+            _logger.LogWarning("GetFinanceReport: No active HttpContext is available.");
+            return "No active HttpContext is available.";
+        }
+
+        // Read the sidecar API URL from configuration
+        var sideCarApiUrl = _configuration["Mcp:DownstreamApis:AzureStorageAccount:AppOnlyAccessSidecarApi"];
+        if (string.IsNullOrWhiteSpace(sideCarApiUrl))
+        {
+            _logger.LogWarning("Missing configuration for Sidecar API URL. Check Mcp:DownstreamApis:AzureStorageAccount:AppOnlyAccessSidecarApi.");
+            return "Missing configuration for Sidecar API URL.";
+        }
+
+        // Make a  HTTP GET call and read the response body as a string. No, authorization header is sent to the sidecar API, as it is unauthenticated.
+        using var httpClient = new HttpClient();
+        HttpResponseMessage response;
+        try
+        {
+            response = await httpClient.GetAsync(sideCarApiUrl);
+            response.EnsureSuccessStatusCode();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetFinanceReport: Error while calling Sidecar API.");
+            return $"Error while calling Sidecar API: {ex.Message}";
+        }
+
+        // Read the response body as a string
+        var accessToken = await response.Content.ReadAsStringAsync();
+
+        // Get the access token value from the JSON string. 
+        // The format may vary based on your sidecar API implementation.
+        // {"authorizationHeader":"Bearer eyJ0eXAi"}
+        try
+        {
+            var jsonDoc = JsonDocument.Parse(accessToken);
+            if (jsonDoc.RootElement.TryGetProperty("authorizationHeader", out var authHeaderElement))
+            {
+                accessToken = authHeaderElement.GetString() ?? string.Empty;
+            }
+            else
+            {
+                _logger.LogWarning("GetFinanceReport: 'authorizationHeader' property not found in Sidecar API response.");
+                return "Invalid response from Sidecar API: 'authorizationHeader' property not found.";
+            }
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "GetFinanceReport: Error parsing JSON response from Sidecar API.");
+            return $"Error parsing JSON response from Sidecar API: {ex.Message}";
+        }
+
+        // Remove the "Bearer " prefix if it exists
+        if (accessToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            accessToken = accessToken["Bearer ".Length..].Trim();
+        }
+
+        // Log the access token
+        _logger.LogInformation("GetFinanceReport: Access token obtained from Sidecar API: {AccessToken}", accessToken);
+
+        // Get the Azure Storage account name from configuration
+        var accountName = _configuration["Mcp:DownstreamApis:AzureStorageAccount:AccountName"];
+        if (string.IsNullOrWhiteSpace(accountName))
+        {
+            _logger.LogWarning("Missing configuration for Azure Storage account name. Check Mcp:DownstreamApis:AzureStorageAccount:AccountName.");
+            return "Missing configuration for Azure Storage account name.";
+        }
+
+        try
+        {
+            // Convert the access token string to an AccessToken object with an expiration time.
+            var credential = new StaticTokenCredential(new AccessToken(accessToken, DateTimeOffset.UtcNow.AddHours(1)));
+
+            var serviceUri = new Uri($"https://{accountName}.blob.core.windows.net");
+            var blobServiceClient = new BlobServiceClient(serviceUri, credential);
+
+            // Get the finance report blob from a specific container and blob name
+            var containerClient = blobServiceClient.GetBlobContainerClient("finance-reports");
+            var blobClient = containerClient.GetBlobClient("Contoso-Finance-Report-2024-2026.md");
+            var downloadInfo = await blobClient.DownloadAsync();
+            using (var reader = new StreamReader(downloadInfo.Value.Content))
+            {
+                var content = await reader.ReadToEndAsync();
+                return content;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "GetFinanceReport: Error while retrieving finance report.");
             return ex.Message;
         }
     }

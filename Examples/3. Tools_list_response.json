@@ -2,6 +2,17 @@
   "result": {
     "tools": [
       {
+        "name": "get_finance_report",
+        "description": "Get finance report of Contoso company.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        },
+        "execution": {
+          "taskSupport": "optional"
+        }
+      },
+      {
         "name": "echo",
         "description": "Echoes the message back to the client.",
         "inputSchema": {
@@ -39,6 +50,9 @@
         "inputSchema": {
           "type": "object",
           "properties": {}
+        },
+        "execution": {
+          "taskSupport": "optional"
         }
       },
       {

@@ -31,6 +31,7 @@ The following values are required for the Azure Storage account demo.
 * **Mcp:ClientId** — the app client ID in your Entra ID tenant. 
 * **Mcp:ClientSecret** — the client secret in your Entra ID tenant. 
 * **Mcp:DownstreamApis:AzureStorageAccount:AccountName** your Azure Blob Storage account.
+* **Mcp:DownstreamApis:AzureStorageAccount:AppOnlyAccessSidecarApi** the full URL (including the parameters) to obtain application access token to call the Storage account
 
 ## Protected resource metadata
 
