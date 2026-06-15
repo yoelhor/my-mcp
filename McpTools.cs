@@ -154,6 +154,9 @@ public static class McpTools
             return "Missing configuration for Azure Storage account name.";
         }
 
+        // Log the Storage account name being accessed.
+        _logger.LogInformation("Azure Storage account '{AccountName}'", accountName);
+
         try
         {
             // Exchange incoming token (aud = this API) for downstream token (aud = storage).
