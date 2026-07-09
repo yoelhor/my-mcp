@@ -99,20 +99,15 @@ public static class McpTools
     }
 
     [McpServerTool, Description("Add item to the shopping cart.")]
-    // [Authorize(Policy = "RequireWriteScope")]
+    [Authorize(Policy = "RequireReadRole")]
     public static string AddToCart(
         [Description("The item name to add to the shopping cart.")] string item)
     {
         Log("AddToCart");
 
-        // Check for required scope in the token claims and return an appropriate message
-        string message = HasWriteScope()
-            ? $"Item '{item}' has been added to the shopping cart"
-            : $"User does NOT have required scope '{_writeScope}'. Authorization will fail.";
-
         // Return the message along with additional context information
         return $"""
-        {message}
+        $"Item '{item}' has been added to the shopping cart"
         Item '{item}' has been added to the shopping cart.
         Date: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC
         User: {_username}

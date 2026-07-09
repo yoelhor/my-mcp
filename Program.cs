@@ -20,8 +20,11 @@ var scopesSupported = builder.Configuration.GetSection("Mcp:Scopes")
     .Distinct(StringComparer.OrdinalIgnoreCase)
     .ToList();
 
-// Get write scope from flattened scopes list (fallback to default if not configured).
-var writeScope = builder.Configuration.GetSection("Mcp:Scopes:WriteScope")?.Value ?? "mymcp.write";
+// Get required write role (fallback to legacy scope key, then default).
+var requiredWriteRole =
+    builder.Configuration.GetSection("Mcp:Roles:WriteRole")?.Value ??
+    builder.Configuration.GetSection("Mcp:Scopes:WriteScope")?.Value ??
+    "mymcp.write";
 
 var McpUrl = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME");
 
@@ -93,29 +96,23 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("RequireWriteScope", policy =>
+    options.AddPolicy("RequireReadRole", policy =>
     {
         policy.RequireAuthenticatedUser();
         policy.RequireAssertion(context =>
         {
-            // Entra ID issues scopes as a space-delimited string in "scp".
-            // Depending on claim mapping, it may appear under a schema URI.
-            var tokenScopes = context.User.Claims
-                .Where(claim =>
-                    string.Equals(claim.Type, "scp", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(claim.Type, "scope", StringComparison.OrdinalIgnoreCase) ||
-                    claim.Type.EndsWith("/scope", StringComparison.OrdinalIgnoreCase) ||
-                    claim.Type.EndsWith("/scopes", StringComparison.OrdinalIgnoreCase))
-                .SelectMany(claim => claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+            
+            string requiredReadRole = builder.Configuration["Mcp:AppRoles:ReadRole"] ?? "mymcp.readonly";
 
-            bool hasWriteScope = tokenScopes.Contains(writeScope, StringComparer.OrdinalIgnoreCase);
+            // Validate against role claims (RoleClaimType is configured as "roles").
+            bool hasRequiredRole = context.User.IsInRole(requiredReadRole);
 
-            if (!hasWriteScope)
+            if (!hasRequiredRole)
             {
-                Console.WriteLine($"Authorization failed. Required scope '{writeScope}' not found in token.");
+                Console.WriteLine($"Authorization failed. Required role '{requiredReadRole}' not found in token.");
             }
 
-            return hasWriteScope;
+            return hasRequiredRole;
         });
     });
 });
