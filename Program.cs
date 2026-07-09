@@ -101,11 +101,14 @@ builder.Services.AddAuthorization(options =>
         policy.RequireAuthenticatedUser();
         policy.RequireAssertion(context =>
         {
-            
+
             string requiredReadRole = builder.Configuration["Mcp:AppRoles:ReadRole"] ?? "mymcp.readonly";
 
-            // Validate against role claims (RoleClaimType is configured as "roles").
-            bool hasRequiredRole = context.User.IsInRole(requiredReadRole);
+            // Inspect the "roles" claim directly.
+            bool hasRequiredRole = context.User.Claims.Any(claim =>
+                (claim.Type == "roles" ||
+                 claim.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role") &&
+                string.Equals(claim.Value, requiredReadRole, StringComparison.OrdinalIgnoreCase));
 
             if (!hasRequiredRole)
             {
@@ -114,6 +117,28 @@ builder.Services.AddAuthorization(options =>
 
             return hasRequiredRole;
         });
+    });
+
+    options.AddPolicy("RequireWriteRole", policy =>
+{
+    policy.RequireAuthenticatedUser();
+    policy.RequireAssertion(context =>
+    {
+
+        string requiredWriteRole = builder.Configuration["Mcp:AppRoles:WriteRole"] ?? "mymcp.readWrite";
+
+        // Inspect the "roles" claim directly.
+        bool hasRequiredRole = context.User.Claims.Any(claim =>
+            (claim.Type == "roles" ||
+             claim.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role") &&
+            string.Equals(claim.Value, requiredWriteRole, StringComparison.OrdinalIgnoreCase));
+
+        if (!hasRequiredRole)
+        {
+            Console.WriteLine($"Authorization failed. Required role '{requiredWriteRole}' not found in token.");
+        }
+
+        return hasRequiredRole;
     });
 });
 

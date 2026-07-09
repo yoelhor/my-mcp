@@ -1,0 +1,11 @@
+{
+  "method": "tools/call",
+  "params": {
+    "name": "add_to_cart",
+    "arguments": {
+      "item" : "ABCDEF"
+    }
+  },
+  "jsonrpc": "2.0",
+  "id": 2
+}

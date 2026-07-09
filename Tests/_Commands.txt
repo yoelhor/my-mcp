@@ -1,0 +1,5 @@
+curl -X POST http://localhost:5117 -H "Content-Type: application/json" -H "Authorization: Bearer <ACCESS_TOKEN>" -d "@Initialize.json" -v
+
+curl -X POST http://localhost:5117 -H "Content-Type: application/json"  -H "Mcp-Session-Id: <SESSION_ID>" -H "Authorization: Bearer <ACCESS_TOKEN>" -d "@GetVersionTool.json" -v
+
+curl -X POST http://localhost:5117 -H "Content-Type: application/json"  -H "Mcp-Session-Id: <SESSION_ID>" -H "Authorization: Bearer <ACCESS_TOKEN>" -d "@GetVersionTool.json" -v
