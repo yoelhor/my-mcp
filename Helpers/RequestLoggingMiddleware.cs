@@ -17,7 +17,7 @@ public class RequestLoggingMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         // Log request information
-        string page = "", method = "", authorizationHeader = "", requestBody = "";
+        string method = "", authorizationHeader = "", requestBody = "";
 
         // Log all HTTP request headers
         foreach (var header in context.Request.Headers)
@@ -36,7 +36,7 @@ public class RequestLoggingMiddleware
             authorizationHeader = "No Authorization header present";
         }
 
-        // Get the page name
+        // Get the type of request (e.g., POST) and handle accordingly
         if (context.Request.Method == "POST")
         {
 
@@ -48,8 +48,6 @@ public class RequestLoggingMiddleware
                 context.Request.Body.Position = 0;
             }
 
-            // If the page is "/" and the type is POST, then set page to "MCP tool"
-            page = "MCP tool";
 
             // Get the MCP method name from the body
             try
@@ -62,12 +60,12 @@ public class RequestLoggingMiddleware
             }
             catch (System.Text.Json.JsonException)
             {
-                page = "Unknown page";
+                method = "Unknown method";
             }
         }
         else
         {
-            page = "Unknown page";
+            method = "Unknown method";
         }
 
         _logger.LogInformation("*** Request Path: {RequestPath}, Method: {RequestMethod}", context.Request.Path, context.Request.Method);

@@ -20,6 +20,12 @@ var scopesSupported = builder.Configuration.GetSection("Mcp:Scopes")
     .Distinct(StringComparer.OrdinalIgnoreCase)
     .ToList();
 
+// Check if scopesSupported is empty and set a default scope.
+if (!scopesSupported.Any())
+{
+    scopesSupported.Add("mymcp.readonly");
+}
+
 // Get required write role (fallback to legacy scope key, then default).
 var requiredWriteRole =
     builder.Configuration.GetSection("Mcp:Roles:WriteRole")?.Value ??
@@ -90,7 +96,7 @@ builder.Services.AddAuthentication(options =>
     {
         AuthorizationServers = { builder.Configuration["Mcp:Authority"] ?? string.Empty },
         Resource = McpUrl,
-        ScopesSupported = scopesSupported,
+        ScopesSupported = scopesSupported!,
     };
 });
 
@@ -119,29 +125,31 @@ builder.Services.AddAuthorization(options =>
         });
     });
 
+
+
     options.AddPolicy("RequireWriteRole", policy =>
-{
-    policy.RequireAuthenticatedUser();
-    policy.RequireAssertion(context =>
     {
-
-        string requiredWriteRole = builder.Configuration["Mcp:AppRoles:WriteRole"] ?? "mymcp.readWrite";
-
-        // Inspect the "roles" claim directly.
-        bool hasRequiredRole = context.User.Claims.Any(claim =>
-            (claim.Type == "roles" ||
-             claim.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role") &&
-            string.Equals(claim.Value, requiredWriteRole, StringComparison.OrdinalIgnoreCase));
-
-        if (!hasRequiredRole)
+        policy.RequireAuthenticatedUser();
+        policy.RequireAssertion(context =>
         {
-            Console.WriteLine($"Authorization failed. Required role '{requiredWriteRole}' not found in token.");
-        }
 
-        return hasRequiredRole;
+            string requiredWriteRole = builder.Configuration["Mcp:AppRoles:WriteRole"] ?? "mymcp.readWrite";
+
+            // Inspect the "roles" claim directly.
+            bool hasRequiredRole = context.User.Claims.Any(claim =>
+                (claim.Type == "roles" ||
+                claim.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role") &&
+                string.Equals(claim.Value, requiredWriteRole, StringComparison.OrdinalIgnoreCase));
+
+            if (!hasRequiredRole)
+            {
+                Console.WriteLine($"Authorization failed. Required role '{requiredWriteRole}' not found in token.");
+            }
+
+            return hasRequiredRole;
+        });
     });
 });
-
 
 // The following line enables Application Insights telemetry collection.
 builder.Services.AddApplicationInsightsTelemetry();
@@ -187,8 +195,15 @@ McpTools.Initialize(
     oboTokenService: app.Services.GetRequiredService<IOnBehalfOfTokenService>()
 );
 
-
-app.MapMcp().RequireAuthorization();
+// Check the RequireAuthorization setting in appsettings.json to determine if MCP endpoints should require authorization.
+if (app.Configuration.GetValue<bool>("Mcp:RequireAuthorization"))
+{
+    app.MapMcp().RequireAuthorization();
+}
+else
+{
+    app.MapMcp();
+}
 
 // Add request logging middleware
 app.UseMiddleware<RequestLoggingMiddleware>();

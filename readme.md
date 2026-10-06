@@ -24,7 +24,7 @@ Add the following app settings with their corresponding values. For Azure App Se
 * **Mcp:Audience** — the audience of the access token. This must match the app ID in your Entra ID tenant.
 * **Mcp:Scopes:ReadScope** — the name of the read only scope, like `mymcp.Read`.
 * **Mcp:Scopes:WriteScope** — the name of the read and write scope, like `mymcp.ReadWrite`.
-
+* **Mcp:RequireAuthorization** - Determines whether the MCP server enforces authorization or treats it as optional.
 
 The following values are required for the Azure Storage account demo.
 

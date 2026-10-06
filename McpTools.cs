@@ -35,7 +35,7 @@ public static class McpTools
 {
     private static IConfiguration _configuration = null!;
     private static ILogger _logger = null!;
-    private static TelemetryClient _telemetry;
+    private static TelemetryClient _telemetry = null!;
     private static IHttpContextAccessor _httpContextAccessor = null!;
     private static IOnBehalfOfTokenService _oboTokenService = null!;
     private static string _writeScope = string.Empty;
@@ -60,7 +60,7 @@ public static class McpTools
     {
         string authHeaderValue = "No Authorization header present";
 
-        if (_httpContextAccessor.HttpContext.Request.Headers.TryGetValue("Authorization", out var authHeader))
+        if (_httpContextAccessor.HttpContext!.Request.Headers.TryGetValue("Authorization", out var authHeader))
         {
             authHeaderValue = authHeader.ToString();
         }
