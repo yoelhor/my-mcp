@@ -68,23 +68,39 @@ public static class McpTools
         _logger.LogInformation($"*** The MCP tool '{toolName}' was called. Authorization header: {authHeaderValue}");
     }
 
-    [McpServerTool, Description("Echoes the message back to the client.")]
-    public static string Echo(
+    [McpServerTool, Description("Echoes the supplied message back to the agent. Use this tool to send a short message to the MCP server and get the same message back. It's a quick way to check that the server is reachable and that a tool call works from start to finish. Whatever text you pass in message is what you get back. Keep the message to 250 characters or fewer. For example, if the user asks the MCP to return the message 'hello world', pass 'hello world' in message and you'll get 'hello world' back.")]
+    public static string EchoMessage(
         [Description("The message to echo back.")] string message)
     {
+
+        // Limit the text to 250 characters
+        if (message.Length > 250)
+        {
+            message = message.Substring(0, 250);
+        }
+
+        // Log the tool call
         Log("Echo");
-        return $"hello {message}";
+
+        // Return the echoed message
+        return $"Echo: {message}";
     }
 
-    [McpServerTool, Description("Returns the length of a message.")]
-    public static string ContentLength(
+    [McpServerTool, Description("Returns the length of a message in characters, including whitespace. Use this when an exact length is needed, for example before sending text to a system with a size limit. The message can be up to 250 characters long. Example: for the message 'this is my first test for today', the response is 31.")]
+    public static string GetMessageLength(
         [Description("The message to calculate the length of.")] string message)
     {
+        // Limit the text to 250 characters
+        if (message.Length > 250)
+        {
+            message = message.Substring(0, 250);
+        }
+
         Log("ContentLength");
         return $"Your message is {message.Length} characters long.";
     }
 
-    [McpServerTool, Description("Returns the MCP version.")]
+    [McpServerTool, Description("Returns the version of this MCP server, the name of the server it runs on, and the server's current date and time. Also returns the user name of the user working with the agent, when available. Use this to confirm compatibility or to include version details when reporting a problem. Takes no parameters. Does not return other server details such as IP address, operating system, or security information. Example request: Show me the MCP server version. Example response: My MCP, Version:10.0.01, Server:AS1234, Date:2007-11-22 08:11:59, User:Dave.")]
     public static string GetVersion()
     {
         Log("GetVersion");
@@ -114,7 +130,7 @@ public static class McpTools
         """;
     }
 
-    [McpServerTool, Description("List containers in an Azure Blob Storage account.")]
+    [McpServerTool, Description("Lists the containers in the Azure Blob Storage account configured for this MCP server. Use this to find out which containers exist before a next step, such as reading blobs from one. Returns container names only, without other details such as ID or creation date. Takes no parameters, so it cannot select a different storage account or filter by name or prefix. Requires a valid access token and the access to the blob storage is done on-behalf-of the user. Example: call it with no arguments to answer 'Which containers are in the storage account?'.")]
     public static async Task<string> ListBlobContainers()
     {
         Log("ListBlobContainers");
@@ -179,107 +195,107 @@ public static class McpTools
         }
     }
 
-    [McpServerTool, Description("Get finance report of Contoso company.")]
-    public static async Task<string> GetFinanceReport()
-    {
-        Log("GetFinanceReport");
+    // [McpServerTool, Description("Get finance report of Contoso company.")]
+    // public static async Task<string> GetFinanceReport()
+    // {
+    //     Log("GetFinanceReport");
 
-        // Obtain an access token from the the sidecar API (this API) to call the downstream Azure Storage API.
-        var context = _httpContextAccessor.HttpContext;
-        if (context == null)
-        {
-            _logger.LogWarning("GetFinanceReport: No active HttpContext is available.");
-            return "No active HttpContext is available.";
-        }
+    //     // Obtain an access token from the the sidecar API (this API) to call the downstream Azure Storage API.
+    //     var context = _httpContextAccessor.HttpContext;
+    //     if (context == null)
+    //     {
+    //         _logger.LogWarning("GetFinanceReport: No active HttpContext is available.");
+    //         return "No active HttpContext is available.";
+    //     }
 
-        // Read the sidecar API URL from configuration
-        var sideCarApiUrl = _configuration["Mcp:DownstreamApis:AzureStorageAccount:AppOnlyAccessSidecarApi"];
-        if (string.IsNullOrWhiteSpace(sideCarApiUrl))
-        {
-            _logger.LogWarning("Missing configuration for Sidecar API URL. Check Mcp:DownstreamApis:AzureStorageAccount:AppOnlyAccessSidecarApi.");
-            return "Missing configuration for Sidecar API URL.";
-        }
+    //     // Read the sidecar API URL from configuration
+    //     var sideCarApiUrl = _configuration["Mcp:DownstreamApis:AzureStorageAccount:AppOnlyAccessSidecarApi"];
+    //     if (string.IsNullOrWhiteSpace(sideCarApiUrl))
+    //     {
+    //         _logger.LogWarning("Missing configuration for Sidecar API URL. Check Mcp:DownstreamApis:AzureStorageAccount:AppOnlyAccessSidecarApi.");
+    //         return "Missing configuration for Sidecar API URL.";
+    //     }
 
-        // Make a  HTTP GET call and read the response body as a string. No, authorization header is sent to the sidecar API, as it is unauthenticated.
-        using var httpClient = new HttpClient();
-        HttpResponseMessage response;
-        try
-        {
-            response = await httpClient.GetAsync(sideCarApiUrl);
-            response.EnsureSuccessStatusCode();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "GetFinanceReport: Error while calling Sidecar API.");
-            return $"Error while calling Sidecar API: {ex.Message}";
-        }
+    //     // Make a  HTTP GET call and read the response body as a string. No, authorization header is sent to the sidecar API, as it is unauthenticated.
+    //     using var httpClient = new HttpClient();
+    //     HttpResponseMessage response;
+    //     try
+    //     {
+    //         response = await httpClient.GetAsync(sideCarApiUrl);
+    //         response.EnsureSuccessStatusCode();
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         _logger.LogError(ex, "GetFinanceReport: Error while calling Sidecar API.");
+    //         return $"Error while calling Sidecar API: {ex.Message}";
+    //     }
 
-        // Read the response body as a string
-        var accessToken = await response.Content.ReadAsStringAsync();
+    //     // Read the response body as a string
+    //     var accessToken = await response.Content.ReadAsStringAsync();
 
-        // Get the access token value from the JSON string. 
-        // The format may vary based on your sidecar API implementation.
-        // {"authorizationHeader":"Bearer eyJ0eXAi"}
-        try
-        {
-            var jsonDoc = JsonDocument.Parse(accessToken);
-            if (jsonDoc.RootElement.TryGetProperty("authorizationHeader", out var authHeaderElement))
-            {
-                accessToken = authHeaderElement.GetString() ?? string.Empty;
-            }
-            else
-            {
-                _logger.LogWarning("GetFinanceReport: 'authorizationHeader' property not found in Sidecar API response.");
-                return "Invalid response from Sidecar API: 'authorizationHeader' property not found.";
-            }
-        }
-        catch (JsonException ex)
-        {
-            _logger.LogError(ex, "GetFinanceReport: Error parsing JSON response from Sidecar API.");
-            return $"Error parsing JSON response from Sidecar API: {ex.Message}";
-        }
+    //     // Get the access token value from the JSON string. 
+    //     // The format may vary based on your sidecar API implementation.
+    //     // {"authorizationHeader":"Bearer eyJ0eXAi"}
+    //     try
+    //     {
+    //         var jsonDoc = JsonDocument.Parse(accessToken);
+    //         if (jsonDoc.RootElement.TryGetProperty("authorizationHeader", out var authHeaderElement))
+    //         {
+    //             accessToken = authHeaderElement.GetString() ?? string.Empty;
+    //         }
+    //         else
+    //         {
+    //             _logger.LogWarning("GetFinanceReport: 'authorizationHeader' property not found in Sidecar API response.");
+    //             return "Invalid response from Sidecar API: 'authorizationHeader' property not found.";
+    //         }
+    //     }
+    //     catch (JsonException ex)
+    //     {
+    //         _logger.LogError(ex, "GetFinanceReport: Error parsing JSON response from Sidecar API.");
+    //         return $"Error parsing JSON response from Sidecar API: {ex.Message}";
+    //     }
 
-        // Remove the "Bearer " prefix if it exists
-        if (accessToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-        {
-            accessToken = accessToken["Bearer ".Length..].Trim();
-        }
+    //     // Remove the "Bearer " prefix if it exists
+    //     if (accessToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+    //     {
+    //         accessToken = accessToken["Bearer ".Length..].Trim();
+    //     }
 
-        // Log the access token
-        _logger.LogInformation("GetFinanceReport: Access token obtained from Sidecar API: {AccessToken}", accessToken);
+    //     // Log the access token
+    //     _logger.LogInformation("GetFinanceReport: Access token obtained from Sidecar API: {AccessToken}", accessToken);
 
-        // Get the Azure Storage account name from configuration
-        var accountName = _configuration["Mcp:DownstreamApis:AzureStorageAccount:AccountName"];
-        if (string.IsNullOrWhiteSpace(accountName))
-        {
-            _logger.LogWarning("Missing configuration for Azure Storage account name. Check Mcp:DownstreamApis:AzureStorageAccount:AccountName.");
-            return "Missing configuration for Azure Storage account name.";
-        }
+    //     // Get the Azure Storage account name from configuration
+    //     var accountName = _configuration["Mcp:DownstreamApis:AzureStorageAccount:AccountName"];
+    //     if (string.IsNullOrWhiteSpace(accountName))
+    //     {
+    //         _logger.LogWarning("Missing configuration for Azure Storage account name. Check Mcp:DownstreamApis:AzureStorageAccount:AccountName.");
+    //         return "Missing configuration for Azure Storage account name.";
+    //     }
 
-        try
-        {
-            // Convert the access token string to an AccessToken object with an expiration time.
-            var credential = new StaticTokenCredential(new AccessToken(accessToken, DateTimeOffset.UtcNow.AddHours(1)));
+    //     try
+    //     {
+    //         // Convert the access token string to an AccessToken object with an expiration time.
+    //         var credential = new StaticTokenCredential(new AccessToken(accessToken, DateTimeOffset.UtcNow.AddHours(1)));
 
-            var serviceUri = new Uri($"https://{accountName}.blob.core.windows.net");
-            var blobServiceClient = new BlobServiceClient(serviceUri, credential);
+    //         var serviceUri = new Uri($"https://{accountName}.blob.core.windows.net");
+    //         var blobServiceClient = new BlobServiceClient(serviceUri, credential);
 
-            // Get the finance report blob from a specific container and blob name
-            var containerClient = blobServiceClient.GetBlobContainerClient("finance-reports");
-            var blobClient = containerClient.GetBlobClient("Contoso-Finance-Report-2024-2026.md");
-            var downloadInfo = await blobClient.DownloadAsync();
-            using (var reader = new StreamReader(downloadInfo.Value.Content))
-            {
-                var content = await reader.ReadToEndAsync();
-                return content;
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "GetFinanceReport: Error while retrieving finance report.");
-            return ex.Message;
-        }
-    }
+    //         // Get the finance report blob from a specific container and blob name
+    //         var containerClient = blobServiceClient.GetBlobContainerClient("finance-reports");
+    //         var blobClient = containerClient.GetBlobClient("Contoso-Finance-Report-2024-2026.md");
+    //         var downloadInfo = await blobClient.DownloadAsync();
+    //         using (var reader = new StreamReader(downloadInfo.Value.Content))
+    //         {
+    //             var content = await reader.ReadToEndAsync();
+    //             return content;
+    //         }
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         _logger.LogError(ex, "GetFinanceReport: Error while retrieving finance report.");
+    //         return ex.Message;
+    //     }
+    // }
 
     private static bool HasWriteScope()
     {
