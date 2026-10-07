@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.ApplicationInsights;
 using Microsoft.AspNetCore.Http;
 using ModelContextProtocol.Server;
@@ -70,7 +71,8 @@ public static class McpTools
 
     [McpServerTool, Description("Echoes the supplied message back to the agent. Use this tool to send a short message to the MCP server and get the same message back. It's a quick way to check that the server is reachable and that a tool call works from start to finish. Whatever text you pass in message is what you get back. Keep the message to 250 characters or fewer. For example, if the user asks the MCP to return the message 'hello world', pass 'hello world' in message and you'll get 'hello world' back.")]
     public static string EchoMessage(
-        [Description("The message to echo back.")] string message)
+        [Description("Text to echo back to the agent, for example 'hello world'. Maximum 250 characters.")]
+        [MaxLength(250)] string message)
     {
 
         // Limit the text to 250 characters
@@ -88,7 +90,8 @@ public static class McpTools
 
     [McpServerTool, Description("Returns the length of a message in characters, including whitespace. Use this when an exact length is needed, for example before sending text to a system with a size limit. The message can be up to 250 characters long. Example: for the message 'this is my first test for today', the response is 31.")]
     public static string GetMessageLength(
-        [Description("The message to calculate the length of.")] string message)
+        [Description("Text to measure, for example 'this is my first test for today'. Maximum 250 characters.")] 
+        [MaxLength(250)] string message)
     {
         // Limit the text to 250 characters
         if (message.Length > 250)

@@ -2,25 +2,31 @@
   "result": {
     "tools": [
       {
-        "name": "get_finance_report",
-        "description": "Get finance report of Contoso company.",
+        "name": "list_blob_containers",
+        "description": "Lists the containers in the Azure Blob Storage account configured for this MCP server. Use this to find out which containers exist before a next step, such as reading blobs from one. Returns container names only, without other details such as ID or creation date. Takes no parameters, so it cannot select a different storage account or filter by name or prefix. Requires a valid access token and the access to the blob storage is done on-behalf-of the user. Example: call it with no arguments to answer \u0027Which containers are in the storage account?\u0027.",
         "inputSchema": {
           "type": "object",
           "properties": {}
-        },
-        "execution": {
-          "taskSupport": "optional"
         }
       },
       {
-        "name": "echo",
-        "description": "Echoes the message back to the client.",
+        "name": "get_version",
+        "description": "Returns the version of this MCP server, the name of the server it runs on, and the server\u0027s current date and time. Also returns the user name of the user working with the agent, when available. Use this to confirm compatibility or to include version details when reporting a problem. Takes no parameters. Does not return other server details such as IP address, operating system, or security information. Example request: Show me the MCP server version. Example response: My MCP, Version:10.0.01, Server:AS1234, Date:2007-11-22 08:11:59, User:Dave.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "echo_message",
+        "description": "Echoes the supplied message back to the agent. Use this tool to send a short message to the MCP server and get the same message back. It\u0027s a quick way to check that the server is reachable and that a tool call works from start to finish. Whatever text you pass in message is what you get back. Keep the message to 250 characters or fewer. For example, if the user asks the MCP to return the message \u0027hello world\u0027, pass \u0027hello world\u0027 in message and you\u0027ll get \u0027hello world\u0027 back.",
         "inputSchema": {
           "type": "object",
           "properties": {
             "message": {
-              "description": "The message to echo back.",
-              "type": "string"
+              "description": "Text to echo back to the agent, for example \u0027hello world\u0027. Maximum 250 characters.",
+              "type": "string",
+              "maxLength": 250
             }
           },
           "required": [
@@ -29,49 +35,15 @@
         }
       },
       {
-        "name": "add_to_cart",
-        "description": "Add item to the shopping cart.",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "item": {
-              "description": "The item name to add to the shopping cart.",
-              "type": "string"
-            }
-          },
-          "required": [
-            "item"
-          ]
-        }
-      },
-      {
-        "name": "list_blob_containers",
-        "description": "List containers in an Azure Blob Storage account.",
-        "inputSchema": {
-          "type": "object",
-          "properties": {}
-        },
-        "execution": {
-          "taskSupport": "optional"
-        }
-      },
-      {
-        "name": "get_version",
-        "description": "Returns the MCP version.",
-        "inputSchema": {
-          "type": "object",
-          "properties": {}
-        }
-      },
-      {
-        "name": "content_length",
-        "description": "Returns the length of a message.",
+        "name": "get_message_length",
+        "description": "Returns the length of a message in characters, including whitespace. Use this when an exact length is needed, for example before sending text to a system with a size limit. The message can be up to 250 characters long. Example: for the message \u0027this is my first test for today\u0027, the response is 31.",
         "inputSchema": {
           "type": "object",
           "properties": {
             "message": {
-              "description": "The message to calculate the length of.",
-              "type": "string"
+              "description": "Text to measure, for example \u0027this is my first test for today\u0027. Maximum 250 characters.",
+              "type": "string",
+              "maxLength": 250
             }
           },
           "required": [
